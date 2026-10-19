@@ -132,7 +132,7 @@
   .target-img-preview{width:100%;border-radius:14px;border:1px solid var(--border-gold);box-shadow:0 8px 24px rgba(0,0,0,.6)}
   .close-modal-btn{margin-top:16px;padding:12px 24px;border-radius:999px;border:1px solid var(--border-gold);background:linear-gradient(135deg,#f7d785,#d9a138);color:#21080b;font-family:'Cinzel',serif;font-weight:700;font-size:12px;cursor:pointer;width:100%}
 
-  #loading-view{position:fixed;inset:0;z-index:25;background:var(--bg-dark);display:none;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:20px}
+  #loading-view{position:fixed;inset:0;z-index:25;background:var(--bg-dark);display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:20px}
   .spinner{width:48px;height:48px;border:4px solid rgba(245,203,108,.2);border-top-color:var(--accent-gold);border-radius:50%;animation:spin 1s infinite linear}
   @keyframes spin{to{transform:rotate(360deg)}}
   .load-text{margin-top:18px;font-family:'Cinzel',serif;font-size:14px;color:var(--accent-gold);letter-spacing:.1em}
@@ -142,6 +142,19 @@
   #error p{margin:0 0 16px;color:#cfc5b7;font-size:14px;line-height:1.5}
   #error .retry-btn{padding:10px 24px;border-radius:999px;border:1px solid var(--border-gold);background:rgba(245,203,108,.15);color:var(--accent-gold);font-size:13px;cursor:pointer}
 </style>
+<script>
+window.addEventListener('error', function(e) {
+  console.error('AR Exception:', e);
+  var lv = document.getElementById('loading-view');
+  if (lv) lv.style.display = 'none';
+  var eb = document.getElementById('error');
+  var et = document.getElementById('errorText');
+  if (eb && et) {
+    et.textContent = e.message || 'An error occurred loading the AR experience.';
+    eb.style.display = 'block';
+  }
+});
+</script>
 <script>window.AR_CONFIG = {
   "name": "Bir Set6 Royal AR Invitation",
   "theme": "royal-wedding",
@@ -336,8 +349,10 @@ const currentTheme = THEMES[CONFIG.theme] || THEMES["royal-wedding"];
 document.documentElement.style.setProperty('--bg-dark', currentTheme.bgDark);
 document.documentElement.style.setProperty('--accent-gold', currentTheme.accent);
 document.documentElement.style.setProperty('--border-gold', currentTheme.border);
-document.getElementById('topBrand').textContent = CONFIG.name;
-document.getElementById('startTitle').textContent = CONFIG.name;
+const topBrandEl = document.getElementById('topBrand');
+if (topBrandEl) topBrandEl.textContent = CONFIG.name;
+const startTitleEl = document.getElementById('startTitle');
+if (startTitleEl) startTitleEl.textContent = CONFIG.name;
 
 // Populate UI progress and ceremony tabs (for multi-card decks)
 const storyProgress = document.getElementById('storyProgress');
@@ -1005,10 +1020,14 @@ async function startWebAR() {
 
   } catch (err) {
     console.error('WebAR Tracker Error:', err);
-    loadingView.style.display = 'none';
-    arContainer.style.display = 'none';
-    errorText.textContent = err?.message || 'Could not start camera or AR tracking.';
-    errorBox.style.display = 'block';
+    if (loadingView) loadingView.style.display = 'none';
+    if (arContainer) arContainer.style.display = 'none';
+    let msg = err?.message || 'Could not start camera or AR tracking.';
+    if (msg.includes('Permission') || msg.includes('NotAllowed')) {
+      msg = 'Camera permission was not granted. Please tap the lock / site settings icon in your browser URL bar, enable camera permission, and reload.';
+    }
+    if (errorText) errorText.textContent = msg;
+    if (errorBox) errorBox.style.display = 'block';
   }
 }
 
