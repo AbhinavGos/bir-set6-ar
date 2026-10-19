@@ -41,48 +41,6 @@
   /* MindAR container: fills viewport directly */
   #ar-container{position:fixed;inset:0;width:100vw;height:100vh;overflow:hidden;z-index:0;display:block}
 
-  /* 1-Tap Frictionless Audio & Camera Start Gate */
-  #start-prompt {
-    position: fixed; inset: 0; z-index: 40;
-    display: flex; align-items: center; justify-content: center;
-    background: radial-gradient(circle at 50% 50%, rgba(20, 8, 10, 0.82), rgba(10, 4, 6, 0.96));
-    backdrop-filter: blur(10px);
-    cursor: pointer; text-align: center; padding: 24px;
-    transition: opacity 0.35s ease, visibility 0.35s;
-  }
-  .start-card {
-    max-width: 330px; width: 100%;
-    background: rgba(28, 9, 14, 0.94);
-    border: 1.5px solid var(--border-gold);
-    border-radius: 26px; padding: 32px 24px;
-    box-shadow: 0 16px 45px rgba(0,0,0,0.85), 0 0 30px var(--accent-glow);
-    display: flex; flex-direction: column; align-items: center;
-  }
-  .start-icon-circle {
-    width: 68px; height: 68px; border-radius: 50%;
-    background: linear-gradient(135deg, #f7d785, #d9a138);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 30px; margin-bottom: 18px; color: #1c080b;
-    box-shadow: 0 8px 24px rgba(217, 161, 56, 0.45);
-  }
-  .start-card h2 {
-    font-family: 'Cinzel', serif; font-size: 20px;
-    letter-spacing: 0.08em; margin: 0 0 8px; color: var(--accent-gold);
-  }
-  .start-card p {
-    font-size: 13px; color: var(--text-muted); line-height: 1.5; margin: 0 0 22px;
-  }
-  .btn-tap-start {
-    background: linear-gradient(135deg, #f7d785, #d9a138);
-    color: #1c080b; font-weight: 700; font-size: 13px;
-    letter-spacing: 0.08em; text-transform: uppercase;
-    padding: 13px 28px; border-radius: 999px;
-    border: none; cursor: pointer; font-family: 'Cinzel', serif;
-    box-shadow: 0 6px 20px rgba(217, 161, 56, 0.4);
-    transition: transform 0.15s ease;
-  }
-  .btn-tap-start:active { transform: scale(0.96); }
-
   /* Scanning Viewfinder Overlay (Adapts dynamically to target aspect ratio) */
   #scanner-overlay{position:fixed;inset:0;z-index:10;display:none;pointer-events:none;align-items:center;justify-content:center;flex-direction:column}
   .scanner-box{
@@ -184,15 +142,14 @@
   #error p{margin:0 0 16px;color:#cfc5b7;font-size:14px;line-height:1.5}
   #error .retry-btn{padding:10px 24px;border-radius:999px;border:1px solid var(--border-gold);background:rgba(245,203,108,.15);color:var(--accent-gold);font-size:13px;cursor:pointer}
 </style>
-<style>#start-prompt { display: none !important; }</style>
 <script>window.AR_CONFIG = {
   "name": "Bir Set6 Royal AR Invitation",
   "theme": "royal-wedding",
   "layout": "hybrid",
   "silhouette": "rect",
   "depth": "gold-foil",
-  "anchorPosition": "flush",
-  "tiltAngle": 0,
+  "anchorPosition": "back-edge",
+  "tiltAngle": 75,
   "trackingMode": "grounded",
   "adaptiveTilt": true,
   "directScan": true,
@@ -229,16 +186,6 @@
 <!-- AR Container (Camera video background) -->
 <div id="ar-container"></div>
 
-<!-- 1-Tap Frictionless Audio & Camera Start Gate -->
-<div id="start-prompt">
-  <div class="start-card">
-    <div class="start-icon-circle">✨</div>
-    <h2 id="startTitle">AR Experience</h2>
-    <p id="startSubtitle">Point camera at the physical card to unlock the 3D invitation experience.</p>
-    <button class="btn-tap-start" id="startBtn">Enter AR Camera</button>
-  </div>
-</div>
-
 <!-- Loading View -->
 <div id="loading-view">
   <div class="spinner"></div>
@@ -270,7 +217,6 @@
     <div class="brand" id="topBrand">AR Experience</div>
     <div class="top-actions">
       <button class="icon-btn" id="viewCardBtn" title="View Target Card">🎴</button>
-      <button class="icon-btn" id="modeBtn" title="Toggle 3D Pop-Up / Card View">📐</button>
       <button class="icon-btn" id="musicBtn" aria-label="Toggle Music">🔊</button>
       <button class="icon-btn" id="closeBtn" aria-label="Restart AR">↺</button>
     </div>
@@ -421,8 +367,6 @@ if (CONFIG.videoUrl) {
 }
 
 // UI References
-const startPrompt = document.getElementById('start-prompt');
-const startBtn = document.getElementById('startBtn');
 const loadingView = document.getElementById('loading-view');
 const loadStatus = document.getElementById('loadStatus');
 const scannerOverlay = document.getElementById('scanner-overlay');
@@ -446,33 +390,6 @@ const cardTabBtns = document.querySelectorAll('.card-tab-btn');
 
 viewCardBtn.onclick = () => { cardModal.style.display = 'flex'; };
 closeCardModal.onclick = () => { cardModal.style.display = 'none'; };
-
-const modeBtn = document.getElementById('modeBtn');
-if (modeBtn) {
-  if (CONFIG.videoUrl) {
-    let inFlush = (CONFIG.anchorPosition === 'flush');
-    modeBtn.textContent = inFlush ? '📐' : '🎴';
-    modeBtn.title = inFlush ? 'Switch to 3D Pop-Up' : 'Switch to Card Overlay';
-    modeBtn.onclick = () => {
-      inFlush = !inFlush;
-      if (cardPivotGroup) {
-        if (inFlush) {
-          cardPivotGroup.position.set(0, 0, 0.003);
-          cardPivotGroup.rotation.x = 0;
-          modeBtn.textContent = '📐';
-          modeBtn.title = 'Switch to 3D Pop-Up';
-        } else {
-          cardPivotGroup.position.set(0, targetH / 2, 0.004);
-          cardPivotGroup.rotation.x = Math.PI / 2;
-          modeBtn.textContent = '🎴';
-          modeBtn.title = 'Switch to Card Overlay';
-        }
-      }
-    };
-  } else {
-    modeBtn.style.display = 'none';
-  }
-}
 
 // Dynamic Target Aspect Ratio Detection
 let targetAspect = (CONFIG && CONFIG.targetAspect) ? CONFIG.targetAspect : 1.45;
@@ -752,7 +669,6 @@ let isWebARStarted = false;
 async function startWebAR() {
   if (isWebARStarted) return;
   isWebARStarted = true;
-  if (startPrompt) startPrompt.style.display = 'none';
   loadingView.style.display = 'flex';
   loadStatus.textContent = 'Starting Camera & Card Tracker...';
 
@@ -798,45 +714,24 @@ async function startWebAR() {
 
     // ── PIVOT GROUP: Orientation & Spatial Grounding ──
     cardPivotGroup = new THREE.Group();
-    const isCarousel = (CONFIG.layout === 'carousel');
-    const isCenter = (CONFIG.anchorPosition === 'center' || isCarousel);
-    const isFlush = (CONFIG.anchorPosition === 'flush');
-
-    if (isFlush) {
-      cardPivotGroup.position.set(0, 0, 0.003);
-      cardPivotGroup.rotation.x = 0;
-    } else if (isCenter) {
-      cardPivotGroup.position.set(0, 0, 0.025);
-      const initialTiltRad = (CONFIG.tiltAngle !== undefined ? CONFIG.tiltAngle : 45) * (Math.PI / 180);
-      cardPivotGroup.rotation.x = initialTiltRad;
-    } else {
-      cardPivotGroup.position.set(0, targetH / 2, 0.004);
-      const tiltAngleRad = (CONFIG.tiltAngle !== undefined ? CONFIG.tiltAngle : 90) * (Math.PI / 180);
-      cardPivotGroup.rotation.x = tiltAngleRad;
-    }
+    // Back-edge hinge: virtual card rises from top edge of card
+    cardPivotGroup.position.set(0, targetH / 2, 0.004);
+    const initialTiltRad = (CONFIG.tiltAngle !== undefined ? CONFIG.tiltAngle : 75) * (Math.PI / 180);
+    cardPivotGroup.rotation.x = initialTiltRad;
     cardRoot.add(cardPivotGroup);
 
     // ── Subtle Contact Ground Shadow on Card Plane ──
-    const shadowGeo = isCenter
-      ? new THREE.PlaneGeometry(visualCardWidth * 1.5, visualCardHeight * 1.3)
-      : new THREE.PlaneGeometry(visualCardWidth * 1.3, 0.35);
+    const shadowGeo = new THREE.PlaneGeometry(visualCardWidth * 1.3, 0.35);
     const shadowMat = new THREE.MeshBasicMaterial({
       map: createContactShadowTexture(),
       transparent: true,
-      opacity: isCenter ? 0.35 : 0.65,
+      opacity: 0.65,
       depthWrite: false
     });
     const shadowMesh = new THREE.Mesh(shadowGeo, shadowMat);
-    if (isFlush) {
-      shadowMesh.visible = false;
-    } else if (!isCenter) {
-      shadowMesh.rotation.x = -Math.PI / 2;
-      shadowMesh.position.set(0, 0, 0.001);
-      cardPivotGroup.add(shadowMesh);
-    } else {
-      shadowMesh.position.set(0, 0, 0.001);
-      cardRoot.add(shadowMesh);
-    }
+    shadowMesh.rotation.x = -Math.PI / 2;
+    shadowMesh.position.set(0, 0, 0.001);
+    cardPivotGroup.add(shadowMesh);
 
     // ── 3. Content Presentation (Video AR or Multi-Card Deck) ──
     if (CONFIG.videoUrl) {
@@ -848,13 +743,9 @@ async function startWebAR() {
       videoTex.magFilter = THREE.LinearFilter;
       videoTex.generateMipmaps = false;
 
-      // Video plane geometry: if flush, match card target dimensions (targetW x targetH)
-      const vWidth = isFlush ? targetW : visualCardWidth;
-      const vHeight = isFlush ? targetH : visualCardHeight;
-      const videoGeo = new THREE.PlaneGeometry(vWidth, vHeight);
-      if (!isFlush && !isCenter) {
-        videoGeo.translate(0, vHeight / 2, 0);
-      }
+      // Video plane geometry with bottom pivot along card hinge
+      const videoGeo = new THREE.PlaneGeometry(visualCardWidth, visualCardHeight);
+      videoGeo.translate(0, visualCardHeight / 2, 0);
 
       const videoMat = new THREE.MeshBasicMaterial({ map: videoTex, side: THREE.DoubleSide });
       const videoMesh = new THREE.Mesh(videoGeo, videoMat);
@@ -862,10 +753,8 @@ async function startWebAR() {
       cardPivotGroup.add(videoMesh);
 
       // Recessed metallic backing to prevent GPU Z-fighting
-      const backGeo = new THREE.PlaneGeometry(vWidth + 0.015, vHeight + 0.015);
-      if (!isFlush && !isCenter) {
-        backGeo.translate(0, (vHeight + 0.015) / 2, 0);
-      }
+      const backGeo = new THREE.PlaneGeometry(visualCardWidth + 0.015, visualCardHeight + 0.015);
+      backGeo.translate(0, (visualCardHeight + 0.015) / 2, 0);
       const backMat = new THREE.MeshBasicMaterial({ color: currentTheme.edgeColor, side: THREE.DoubleSide });
       const backMesh = new THREE.Mesh(backGeo, backMat);
       backMesh.position.set(0, 0, -0.003);
@@ -1099,8 +988,10 @@ async function startWebAR() {
         }
 
         if (cardRoot.visible) {
-          if (!CONFIG.videoUrl) {
+          if (CONFIG.adaptiveTilt !== false) {
             updateViewingAngle();
+          }
+          if (!CONFIG.videoUrl) {
             updateLayoutAnimation();
             updateStoryProgress();
           }
@@ -1283,12 +1174,6 @@ function closeAR() {
 }
 
 // Event Listeners
-if (startBtn) {
-  startBtn.onclick = () => {
-    primeAudio();
-    startWebAR();
-  };
-}
 prevBtn.onclick = () => setCard(activeIndex - 1);
 nextBtn.onclick = () => setCard(activeIndex + 1);
 closeBtn.onclick = closeAR;
@@ -1344,6 +1229,12 @@ window.addEventListener('touchend', handleCardTap);
 
 // Seamless Audio Unlock on First User Touch Gesture
 function primeOrUnlockAudio() {
+  if (CONFIG.videoUrl && arVideo) {
+    if (arVideo.muted) {
+      arVideo.muted = false;
+      if (musicBtn) musicBtn.textContent = '🔊';
+    }
+  }
   if (CONFIG.audioUrl) {
     if (!bgAudio) {
       bgAudio = new Audio(CONFIG.audioUrl);
@@ -1361,17 +1252,11 @@ window.addEventListener('pointerdown', primeOrUnlockAudio, { passive: true });
 window.addEventListener('touchstart', primeOrUnlockAudio, { passive: true });
 window.addEventListener('click', primeOrUnlockAudio, { passive: true });
 
-// DIRECT LAUNCH: Open immediately into scanning mode if directScan is true
-if (CONFIG.directScan !== false) {
-  if (startPrompt) {
-    startPrompt.style.display = 'none';
-    startPrompt.style.visibility = 'hidden';
-  }
-  if (document.readyState === 'complete' || document.readyState === 'interactive') {
-    startWebAR();
-  } else {
-    window.addEventListener('DOMContentLoaded', startWebAR);
-  }
+// DIRECT LAUNCH: Open camera view immediately
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+  startWebAR();
+} else {
+  window.addEventListener('DOMContentLoaded', startWebAR);
 }
 </script>
 </body>
